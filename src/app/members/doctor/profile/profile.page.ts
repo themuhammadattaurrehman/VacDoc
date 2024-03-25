@@ -12,7 +12,9 @@ import { FileChooser } from '@ionic-native/file-chooser/ngx';
 import { File, FileEntry } from '@ionic-native/file/ngx';
 import { FilePath } from '@ionic-native/file-path/ngx';
 import { FileTransfer, FileUploadOptions, FileTransferObject } from '@ionic-native/file-transfer/ngx';
-
+// import { Filesystem, Directory } from '@capacitor/filesystem';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { HttpClient } from "@angular/common/http";
 @Component({
   selector: "app-profile",
   templateUrl: "./profile.page.html",
@@ -25,7 +27,8 @@ export class ProfilePage implements OnInit {
   DocotrId: any;
   uploading: any;
   profileImagePath: any;
-  signatureImagePath: any
+  signatureImagePath: any;
+  
 
   constructor(
     public loadingController: LoadingController,
@@ -38,13 +41,18 @@ export class ProfilePage implements OnInit {
     private file: File,
     private filePath: FilePath,
     private transfer: FileTransfer,
-    private platform: Platform
+    private platform: Platform,
+    private sanitizer: DomSanitizer,
+    private http: HttpClient,
 
   ) { }
 
   ngOnInit() {
     this.storage.get(environment.DOCTOR_Id).then(val => {
       this.DocotrId = val;
+   
+    //  this.loadImages();
+      
     });
 
     this.getProfile();
@@ -93,7 +101,16 @@ export class ProfilePage implements OnInit {
 
     });
   }
+  handleImageError(event: any) {
+    console.error('Error loading image:', event);
+   }
+  //  private loadImages() {
+  //   const profileImageUrl = 'https://example.com/profile.jpg'; // Example profile image URL
+  //   const signatureImageUrl = 'https://example.com/signature.jpg'; // Example signature image URL
 
+  //   this.loadImageFromApi(profileImageUrl, 'profile');
+  //   this.loadImageFromApi(signatureImageUrl, 'signature');
+  // }
   private previewImage(file: FileList, imagePath: string) {
     const reader = new FileReader();
     reader.onload = () => {
@@ -106,7 +123,7 @@ export class ProfilePage implements OnInit {
   }
 
   async SelectProfileImage(profileFile: FileList) {
-
+console.log(profileFile);
     this.previewImage(profileFile, "profile");
 
     const loading = await this.loadingController.create({
@@ -114,8 +131,8 @@ export class ProfilePage implements OnInit {
     });
     await loading.present();
     const profileData = new FormData();
+    console.log(profileData)
     profileData.append("ProfileImage", profileFile.item(0));
-
     await this.uploadService.uploadImage(profileData).subscribe(res => {
       if (res) {
         let pImage = res.dbPath;

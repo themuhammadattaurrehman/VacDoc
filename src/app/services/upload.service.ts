@@ -7,6 +7,9 @@ import { catchError } from 'rxjs/operators';
   providedIn: 'root'
 })
 export class UploadService extends BaseService {
+  uploadFile(formData: FormData) {
+    throw new Error("Method not implemented.");
+  }
 
   private readonly API = `${environment.BASE_URL}doctor`;
 
