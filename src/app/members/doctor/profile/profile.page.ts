@@ -13,8 +13,10 @@ import { File, FileEntry } from '@ionic-native/file/ngx';
 import { FilePath } from '@ionic-native/file-path/ngx';
 import { FileTransfer, FileUploadOptions, FileTransferObject } from '@ionic-native/file-transfer/ngx';
 // import { Filesystem, Directory } from '@capacitor/filesystem';
+// import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+// import { HttpClient } from "@angular/common/http";
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { HttpClient } from "@angular/common/http";
+
 @Component({
   selector: "app-profile",
   templateUrl: "./profile.page.html",
@@ -28,6 +30,7 @@ export class ProfilePage implements OnInit {
   uploading: any;
   profileImagePath: any;
   signatureImagePath: any;
+  // apiRootUrl: string = 'https://localhost:5001/';
   
 
   constructor(
@@ -43,7 +46,7 @@ export class ProfilePage implements OnInit {
     private transfer: FileTransfer,
     private platform: Platform,
     private sanitizer: DomSanitizer,
-    private http: HttpClient,
+    // private http: HttpClient,
 
   ) { }
 
@@ -113,6 +116,7 @@ export class ProfilePage implements OnInit {
   // }
   private previewImage(file: FileList, imagePath: string) {
     const reader = new FileReader();
+    console.log(reader);
     reader.onload = () => {
       if (imagePath == "profile")
         this.profileImagePath = reader.result as string;
@@ -120,34 +124,37 @@ export class ProfilePage implements OnInit {
         this.signatureImagePath = reader.result as string;
     }
     reader.readAsDataURL(file.item(0));
+    // console.log(reader.readAsDataURL(file.item(0)));
   }
 
   async SelectProfileImage(profileFile: FileList) {
-console.log(profileFile);
+    console.log(profileFile);
     this.previewImage(profileFile, "profile");
 
     const loading = await this.loadingController.create({
-      message: "Uploading Image"
+        message: "Uploading Image"
     });
     await loading.present();
+
     const profileData = new FormData();
-    console.log(profileData)
     profileData.append("ProfileImage", profileFile.item(0));
-    await this.uploadService.uploadImage(profileData).subscribe(res => {
-      if (res) {
-        let pImage = res.dbPath;
-        this.fg.value.ProfileImage = pImage;
-        console.log("ProfileImage = " + this.fg.value.ProfileImage);
-        loading.dismiss();
-      }
-      else {
-        console.log(res.Message);
-        console.log("Error: Try Again! Failed to upload ProfileImage");
-        this.toastService.create("Error: Try Again! Failed to upload ProfileImage.")
-        loading.dismiss();
-      }
+    
+    await this.uploadService.uploadImage(profileData).subscribe((res: { dbPath: any; Message: any; }) => {
+        if (res && res.dbPath) {
+            let dbPath = res.dbPath;
+            let profileImageUrl =  environment.RESOURCE_URL + dbPath; // Constructing the complete URL
+            this.fg.value.ProfileImage = profileImageUrl;
+            console.log("ProfileImage = " + this.fg.value.ProfileImage);
+            loading.dismiss();
+        } else {
+            console.log(res.Message || "Error: No response received from server.");
+            console.log("Error: Try Again! Failed to upload ProfileImage");
+            this.toastService.create("Error: Try Again! Failed to upload ProfileImage.")
+            loading.dismiss();
+        }
     });
-  }
+}
+
 
   async SelectSignatureImage(signatureFile: FileList) {
 
@@ -160,10 +167,11 @@ console.log(profileFile);
     const signatureData = new FormData();
     signatureData.append("SignatureImage", signatureFile.item(0));
 
-    await this.uploadService.uploadImage(signatureData).subscribe(res => {
+    await this.uploadService.uploadImage(signatureData).subscribe((res: { dbPath: any; Message: any; }) => {
       if (res) {
         let sData = res.dbPath;
-        this.fg.value.SignatureImage = sData;
+        let SignatureImageUrl = environment.RESOURCE_URL + sData;
+        this.fg.value.SignatureImage = SignatureImageUrl;
         console.log("SignatureImage = " + this.fg.value.SignatureImage);
         loading.dismiss();
       }
